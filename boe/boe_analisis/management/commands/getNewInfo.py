@@ -6,6 +6,7 @@ from django.db import models
 from boe_analisis.models import Documento
 from django.db import connection
 import re
+import time
 import datetime
 from processDocument import  ProcessDocument
 from lxml import etree
@@ -43,10 +44,18 @@ class Command(BaseCommand):
 
             ultima_fecha = datetime.date(year=year, month=month, day=day)
 
-
-
+        # docs = ["http://www.boe.es/diario_boe/xml.php?id=BOE-A-2004-7339",
+        #         "http://www.boe.es/diario_boe/xml.php?id=BOE-A-2004-7397"]
+        # for doc in docs:
+        #     try:
+        #         print doc
+        #         d = ProcessDocument(doc)
+        #         d.saveDoc()
+        #     except Exception, e:
+        #         print "Error: " + str(e) + " in " + doc
+        
         for d in daterange(ultima_fecha, hoy):
-            print d
+            #print d
             url_day = getURLDay(d)
             print url_day
             req = requests.get(url_day)
@@ -57,12 +66,13 @@ class Command(BaseCommand):
                 all_docs = []
                 procesarSumario(url_sum, all_docs)
                 for doc in all_docs:
-                    print doc
-                    try:
-                        d = ProcessDocument(doc)
-                        d.saveDoc()
-                    except Exception, e:
-                        print "fallo " + doc
+                    #print doc
+                    if not ProcessDocument.already_processed_doc(doc):
+                        try:
+                            d = ProcessDocument(doc)
+                            d.saveDoc()
+                        except Exception, e:
+                            print "Error: " + str(e) + " in " + doc
 
 
 
@@ -96,17 +106,17 @@ def getURLDay(d):
 
 
 def procesarSumario(url_sumario, allDocs):
-
+    time.sleep(1)
     url_sumario = url_sumario
-    print url_sumario
+    #print url_sumario
     content = URL(url_sumario).download()
     xml = etree.XML(content)
     ids = etree.XPath("//item/@id")
+    urlHtm = etree.XPath("//item/urlHtm")
     for id in ids(xml):
-        url_doc = url_boe.format(id)
-        allDocs.append(url_doc)
-
-
-
-
-
+        htmPage = etree.XPath("//item[@id='"+id+"']/urlHtm")
+        if htmPage(xml):
+            url_doc = url_boe.format(id)
+            allDocs.append(url_doc)
+        else:
+            print "Did not find html for" + id + " skip it."

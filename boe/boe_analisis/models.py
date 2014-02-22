@@ -2,7 +2,7 @@
 from django.db import models
 import datetime
 
-# Create your models here.
+
 class GetOrNoneManager(models.Manager):
     """Adds get_or_none method to objects
     """
@@ -14,7 +14,7 @@ class GetOrNoneManager(models.Manager):
 
 
 class CodigoTitulo(models.Model):
-    codigo = models.CharField(max_length=10)
+    codigo = models.CharField(max_length=10, null=True)
     titulo = models.CharField(max_length=4000, null=True)
 
     class Meta:
@@ -25,9 +25,10 @@ class Diario(models.Model):
     codigo = models.CharField(max_length=10, primary_key=True)
     titulo = models.CharField(max_length=400, null=True)
 
-class Departamento(models.Model):
-    codigo = models.CharField(max_length=10, primary_key=True)
-    titulo = models.CharField(max_length=4000, null=True)
+class Departamento(CodigoTitulo):
+    
+    class Meta:
+        ordering = ['codigo']
 
 class Rango(models.Model):
     codigo = models.IntegerField(primary_key=True)
@@ -51,6 +52,14 @@ class Nota(models.Model):
 class Materia(models.Model):
     codigo = models.IntegerField(primary_key=True)
     titulo = models.CharField(max_length=4000, null=True)
+    
+class Materia_anuncio(models.Model):
+    codigo = models.IntegerField(primary_key=True)
+    titulo = models.CharField(max_length=4000, null=True)
+    
+class MateriaCPV(models.Model):
+    codigo = models.IntegerField(primary_key=True)
+    titulo = models.CharField(max_length=4000, null=True)
 
 
 class Alerta(models.Model):
@@ -62,18 +71,17 @@ class Palabra(models.Model):
     titulo = models.CharField(max_length=4000, null=True)
 
 class Referencia(models.Model):
-    referencia = models.ForeignKey('Documento')
+    identificador = models.CharField(max_length=25)
     palabra = models.ForeignKey(Palabra)
     texto = models.TextField(max_length=4000)
-
+    
     class Meta:
-        unique_together = (('referencia','palabra'),)
+        ordering = ['identificador']
 
     # def __unicode__(self):
     #     return self.palabra.codigo
 
 class Partido(models.Model):
-
     nombre = models.CharField(max_length=200)
 
     def __unicode__(self):
@@ -220,17 +228,14 @@ class Documento(models.Model):
         from django.core.urlresolvers import reverse
         return reverse('individual_doc', args=[str(self.identificador)])
 
-
-
 class Modalidad(CodigoTitulo):
     class Meta:
         ordering = ['codigo']
 
-
 class Tipo(CodigoTitulo):
     class Meta:
         ordering = ['codigo']
-
+   
 class Tramitacion(CodigoTitulo):
     class Meta:
         ordering = ['codigo']
@@ -253,8 +258,8 @@ class DocumentoAnuncio(Documento):
     precio = models.ForeignKey(Precio, null=True)
     importe = models.DecimalField(decimal_places=2, max_digits=1000, null=True, blank=True)
     ambito_geografico = models.CharField(max_length=4000, null=True, blank=True)
-    materias_anuncio = models.CharField(max_length=4000, null=True, blank=True)
-    materias_cpv = models.CharField(max_length=4000, null=True, blank=True)
+    materias_anuncio = models.ManyToManyField(Materia_anuncio,help_text="Materias del anuncio")
+    materias_cpv = models.ManyToManyField(MateriaCPV,help_text="Materias_CPV del anuncio")
     observaciones = models.CharField(max_length=4000, null=True, blank=True)
 
     def __eq__(self, other):
