@@ -9,21 +9,19 @@ from bs4 import BeautifulSoup
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import models, connection
+from django.db.models import Max
 
 from processDocument import  ProcessDocument
 from boe_analisis.models import Documento
 
-cursor = connection.cursor()
-cursor.execute("SELECT max(fecha_publicacion) from boe_analisis_documento")
-val = cursor.fetchone()
-ultima_fecha = val[0]
+
+ultima_fecha = Documento.objects.all().aggregate(Max('fecha_publicacion'))['fecha_publicacion__max']
 if not ultima_fecha:
     ultima_fecha = datetime.date(year=1960, month=1, day=1)
 
 hoy = datetime.date.today() + datetime.timedelta(days=1)
 url = "http://www.boe.es/boe/dias/{0}/{1}/{2}/"
 url_boe = "http://www.boe.es/diario_boe/xml.php?id={0}"
-cursor.close()
 
 class Command(BaseCommand):
 
