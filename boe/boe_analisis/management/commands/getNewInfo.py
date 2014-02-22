@@ -1,16 +1,17 @@
 __author__ = 'Carlos'
 import requests
-from django.core.management.base import BaseCommand, CommandError
-from bs4 import BeautifulSoup
-from django.db import models
-from boe_analisis.models import Documento
-from django.db import connection
 import re
 import time
 import datetime
-from processDocument import  ProcessDocument
 from lxml import etree
 from pattern.web import URL
+from bs4 import BeautifulSoup
+
+from django.core.management.base import BaseCommand, CommandError
+from django.db import models, connection
+
+from processDocument import  ProcessDocument
+from boe_analisis.models import Documento
 
 cursor = connection.cursor()
 cursor.execute("SELECT max(fecha_publicacion) from boe_analisis_documento")
@@ -23,7 +24,6 @@ hoy = datetime.date.today() + datetime.timedelta(days=1)
 url = "http://www.boe.es/boe/dias/{0}/{1}/{2}/"
 url_boe = "http://www.boe.es/diario_boe/xml.php?id={0}"
 cursor.close()
-
 
 class Command(BaseCommand):
 
@@ -74,8 +74,6 @@ class Command(BaseCommand):
                         except Exception, e:
                             print "Error: " + str(e) + " in " + doc
 
-
-
 def daterange(start, stop, step_days=1):
     current = start
     step = datetime.timedelta(step_days)
@@ -90,25 +88,18 @@ def daterange(start, stop, step_days=1):
     else:
         raise ValueError("daterange() step_days argument must not be zero")
 
-
-
-
-
 def getURLDay(d):
-
+    """
+    Return the BOE url of the day passed as parameter
+    """
     mes = "%0*d" % (2, d.month)
     dia = "%0*d" % (2, d.day)
     url_day = url.format(d.year, mes, dia)
     return  url_day
 
-
-
-
-
 def procesarSumario(url_sumario, allDocs):
     time.sleep(1)
     url_sumario = url_sumario
-    #print url_sumario
     content = URL(url_sumario).download()
     xml = etree.XML(content)
     ids = etree.XPath("//item/@id")
